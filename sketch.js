@@ -137,4 +137,6 @@ function sliderEvent() {
 
 function saveImg() {
   save(canvas, 'imageDithered.png', true)
+
+
 }
