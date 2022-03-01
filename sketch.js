@@ -1,35 +1,55 @@
 let w = 500;
 let h = 500;
-let density = 4;
+let density = 1;
+let quantizeRatio = 2;
 let inputImg;
+let canvas;
 
 
 function preload() {
-  img = loadImage('assets/image.jpg');
+  curImg = loadImage('assets/image.jpg');
 }
 
 function setup() {
-  // input = createFileInput(handleFile);
-  // input.position(0, 0);
-
-
-
   pixelDensity(density);
-  createCanvas(w, h)
+  canvas = createCanvas(w, h)
   background(0);
+  dithering(curImg)
 
-  // capture = createCapture(VIDEO);
-  // capture.size(w, h);
-  // capture.hide();
-  dithering()
 
+
+  input = createFileInput(handleFile);
+  let div0 = createDiv();
+  div0.addClass("slider-container")
+  sliderQuantize = createSlider(1, 10, quantizeRatio, 1);
+  sliderQuantize.style('width', '300px')
+  div0.child(createSpan('Quantize Ratio : '))
+  div0.child(sliderQuantize);
+
+  let div1 = createDiv();
+  sliderDensity = createSlider(1, 15, density, 1);
+  sliderDensity.style('width', '300px')
+  div1.addClass("slider-container")
+  div1.child(createSpan('Resolution : '))
+  div1.child(sliderDensity);
+
+  let div2 = createDiv();
+  buttonSave = createButton('save');
+  div2.addClass('center')
+  div2.child(buttonSave)
+  buttonSave.mousePressed(saveImg);
 
 }
 
 function draw() {
-  // if (inputImg) {
-  //   image(inputImg, 0, 0, width, height);
-  // }
+  sliderQuantize.changed(sliderEvent);
+  sliderDensity.changed(sliderEvent)
+
+  if (inputImg) {
+    curImg = inputImg;
+    dithering(curImg);
+    inputImg = null;
+  }
 }
 
 function cartesianToIndex(x, y) {
@@ -44,16 +64,17 @@ function quantize(oldValue, impact) {
 function handleFile(file) {
   print(file);
   if (file.type === 'image') {
-    img = createImg(file.data, '');
-    img.hide();
+    inputImg = createImg(file.data, '');
+    inputImg.hide();
   } else {
-    img = null;
+    inputImg = null;
   }
 }
 
-function dithering() {
+function dithering(img) {
   w = w / density;
   h = h / density;
+  pixelDensity(density);
 
   image(img, 0, 0, w, h);
   filter(GRAY);
@@ -66,12 +87,12 @@ function dithering() {
   let newPixel = 0;
   let quant_error = 0;
 
-  for (let j = 0; j < h - 1; j++) {
-    for (let i = 1; i < w - 1; i++) {
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
       let index = cartesianToIndex(i, j);
       oldPixel = pixels[index];
 
-      newPixel = quantize(oldPixel, 1);
+      newPixel = quantize(oldPixel, quantizeRatio);
       pixels[index] = newPixel;
       pixels[index + 1] = newPixel;
       pixels[index + 2] = newPixel;
@@ -104,4 +125,16 @@ function dithering() {
   pixelDensity(1);
   updatePixels();
 
+  w = 500;
+  h = 500;
+}
+
+function sliderEvent() {
+  quantizeRatio = sliderQuantize.value();
+  density = sliderDensity.value();
+  dithering(curImg);
+}
+
+function saveImg() {
+  save(canvas, 'imageDithered.png', true)
 }
